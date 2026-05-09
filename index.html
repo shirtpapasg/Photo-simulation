@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>3D Photo Simulation</title>
     <!-- Three.js for 3D rendering -->
-    <script src="vendor/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
-    <!-- Native CSS for bulletproof loading on GitHub Pages and Mobile -->
+    <!-- Native CSS for bulletproof loading -->
     <style>
         :root {
             --bg-color: #0f172a;
@@ -20,262 +20,124 @@
         }
 
         body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: var(--bg-color);
-            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            color: var(--text-main);
-            overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile */
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background-color: var(--bg-color);
+            font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+            color: var(--text-main); overscroll-behavior-y: none;
         }
 
-        /* 3D Canvas Layer */
-        #canvas-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         canvas { display: block; }
 
-        /* UI Overlay Layer */
         .ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none; /* Let clicks pass through to 3D canvas */
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 24px;
-            box-sizing: border-box;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 10;
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: 24px; box-sizing: border-box;
         }
 
-        /* Header Styling */
         .header { text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
         .header h1 {
-            margin: 0 0 8px 0;
-            font-size: 2.25rem;
-            font-weight: bold;
+            margin: 0 0 8px 0; font-size: 2.25rem; font-weight: bold;
             background: linear-gradient(to right, #60a5fa, #34d399);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
-        .header p {
-            margin: 0;
-            color: var(--text-muted);
-            font-size: 0.95rem;
-            max-width: 500px;
-            line-height: 1.4;
-        }
+        .header p { margin: 0; color: var(--text-muted); font-size: 0.95rem; max-width: 500px; line-height: 1.4; }
 
-        /* Controls Layout */
-        .controls-area {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            gap: 20px;
-        }
+        .controls-area { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; }
 
-        /* Responsive Mobile Layout */
         @media (max-width: 768px) {
             .controls-area { flex-direction: column; align-items: stretch; gap: 16px; }
             .header h1 { font-size: 1.75rem; }
             .ui-layer { padding: 16px; }
         }
 
-        /* Upload Button */
+        /* Fixed Upload Button styling */
         .upload-btn {
-            pointer-events: auto; /* Re-enable clicks */
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            background: linear-gradient(to right, #2563eb, #4f46e5);
-            color: white;
-            font-weight: bold;
-            padding: 16px 28px;
-            border-radius: 9999px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
-            transition: transform 0.2s, box-shadow 0.2s;
-            -webkit-tap-highlight-color: transparent;
+            pointer-events: auto; display: inline-flex; align-items: center; justify-content: center;
+            gap: 10px; background: linear-gradient(to right, #2563eb, #4f46e5);
+            color: white; font-weight: bold; padding: 16px 28px; border-radius: 9999px;
+            cursor: pointer; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s; -webkit-tap-highlight-color: transparent;
         }
-        .upload-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
-        }
-        .upload-btn input {
-            display: none; /* Hide the ugly native file input */
+        .upload-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5); }
+        
+        /* Visually hidden but accessible input */
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; 
+            overflow: hidden; clip: rect(0,0,0,0); border: 0;
         }
 
-        /* Settings Panel */
         .settings-panel {
-            pointer-events: auto; /* Re-enable clicks */
-            background: var(--panel-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 20px;
-            width: 100%;
-            max-width: 320px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            box-sizing: border-box;
+            pointer-events: auto; background: var(--panel-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color); border-radius: 16px; padding: 20px;
+            width: 100%; max-width: 320px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); box-sizing: border-box;
         }
-        .settings-panel h3 {
-            margin: 0 0 16px 0;
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .settings-panel h3 { margin: 0 0 16px 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; }
 
-        /* Sliders Layout */
         .control-group { margin-bottom: 16px; }
         .control-group:last-child { margin-bottom: 0; }
-        .control-label {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-bottom: 8px;
-        }
+        .control-label { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; }
         .control-value { color: var(--accent); font-weight: bold; }
-        .ticks {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.65rem;
-            color: #64748b;
-            margin-top: 4px;
-            padding: 0 4px;
-        }
+        .ticks { display: flex; justify-content: space-between; font-size: 0.65rem; color: #64748b; margin-top: 4px; padding: 0 4px; }
 
-        /* Custom Range Slider Core CSS */
-        input[type=range] {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 100%;
-            background: transparent;
-            margin: 0;
-        }
+        input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; background: transparent; margin: 0; }
         input[type=range]:focus { outline: none; }
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 6px;
-            cursor: pointer;
-            background: #475569;
-            border-radius: 3px;
-        }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: #475569; border-radius: 3px; }
         input[type=range]::-webkit-slider-thumb {
-            height: 18px;
-            width: 18px;
-            border-radius: 50%;
-            background: var(--accent);
-            cursor: pointer;
-            -webkit-appearance: none;
-            margin-top: -6px;
-            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+            height: 18px; width: 18px; border-radius: 50%; background: var(--accent); cursor: pointer;
+            -webkit-appearance: none; margin-top: -6px; box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
         }
     </style>
 </head>
 <body>
 
-    <!-- UI Overlay Container -->
     <div class="ui-layer">
-        
-        <!-- Header -->
         <header class="header">
             <h1>Nan Hua STEM Gallery</h1>
             <p>Drag to rotate. Pinch/Scroll to zoom. Use the panel below to adjust the gallery settings!</p>
         </header>
 
-        <!-- Bottom Controls Area -->
         <div class="controls-area">
-            
-            <!-- Upload Button -->
             <div>
-                <!-- By wrapping the input in the label natively, iOS Safari guarantees it is clickable -->
-                <label class="upload-btn">
+                <!-- Connected Label correctly targets the file input -->
+                <label class="upload-btn" for="fileInput">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    Load Your Photos
-                    <input type="file" id="fileInput" multiple accept="image/*">
+                    <span id="btn-text">Load Your Photos</span>
                 </label>
+                <input type="file" id="fileInput" multiple accept="image/*" class="sr-only">
             </div>
 
-            <!-- Settings Panel -->
             <div class="settings-panel">
                 <h3>
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                     Gallery Controls
                 </h3>
-                
-                <!-- Speed & Direction -->
                 <div class="control-group">
-                    <div class="control-label">
-                        <span>Speed & Direction</span>
-                        <span id="speedVal" class="control-value">1.0x</span>
-                    </div>
+                    <div class="control-label"><span>Speed & Direction</span><span id="speedVal" class="control-value">1.0x</span></div>
                     <input type="range" id="speedSlider" min="-0.01" max="0.01" step="0.0005" value="0.0015">
-                    <div class="ticks">
-                        <span>Reverse</span>
-                        <span>Stop</span>
-                        <span>Forward</span>
-                    </div>
+                    <div class="ticks"><span>Reverse</span><span>Stop</span><span>Forward</span></div>
                 </div>
-
-                <!-- Zoom -->
                 <div class="control-group">
-                    <div class="control-label">
-                        <span>Camera Zoom</span>
-                        <span id="zoomVal" class="control-value">12.0</span>
-                    </div>
+                    <div class="control-label"><span>Camera Zoom</span><span id="zoomVal" class="control-value">12.0</span></div>
                     <input type="range" id="zoomSlider" min="5" max="50" step="0.5" value="12">
                 </div>
-
-                <!-- Spacing -->
                 <div class="control-group">
-                    <div class="control-label">
-                        <span>Photo Spacing</span>
-                        <span id="spaceVal" class="control-value">1.0x</span>
-                    </div>
+                    <div class="control-label"><span>Photo Spacing</span><span id="spaceVal" class="control-value">1.0x</span></div>
                     <input type="range" id="spaceSlider" min="0.5" max="3.0" step="0.1" value="1.0">
                 </div>
             </div>
-
         </div>
     </div>
 
-    <!-- WebGL Container -->
     <div id="canvas-container"></div>
 
     <script>
         let scene, camera, renderer, carouselGroup, particles;
-        
-        // Interaction & Setup State
-        let isDragging = false;
-        let previousX = 0; let previousY = 0;
-        let targetRotationY = 0; let targetRotationX = 0;
-        let currentRotationY = 0; let currentRotationX = 0;
-
-        // User Settings State
-        let baseRotationSpeed = 0.0015;
-        let targetCameraZ = 12;
-        let currentCameraZ = 12;
-        let spacingMultiplier = 1.0;
-        let loadedItemsCount = 9; // Default to 9 placeholders
-
-        // Zoom boundaries
-        let initialPinchDistance = null;
-        let minCameraZ = 5;
-        let maxCameraZ = 50;
+        let isDragging = false, previousX = 0, previousY = 0;
+        let targetRotationY = 0, targetRotationX = 0, currentRotationY = 0, currentRotationX = 0;
+        let baseRotationSpeed = 0.0015, targetCameraZ = 12, currentCameraZ = 12, spacingMultiplier = 1.0;
+        let loadedItemsCount = 9, initialPinchDistance = null, minCameraZ = 5, maxCameraZ = 50;
 
         window.onload = function() {
             init();
@@ -287,7 +149,6 @@
 
         function init() {
             const container = document.getElementById('canvas-container');
-
             scene = new THREE.Scene();
             scene.fog = new THREE.FogExp2(0x0f172a, 0.02); 
 
@@ -299,9 +160,7 @@
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             container.appendChild(renderer.domElement);
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-            scene.add(ambientLight);
-            
+            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
             const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
             dirLight.position.set(5, 10, 7);
             scene.add(dirLight);
@@ -315,59 +174,35 @@
             window.addEventListener('resize', onWindowResize, false);
         }
 
-        // Generate dynamic canvas textures for placeholders
         function createPlaceholderTexture(index, total) {
             const canvas = document.createElement('canvas');
             canvas.width = 800; canvas.height = 600;
             const ctx = canvas.getContext('2d');
-
             const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
             gradient.addColorStop(0, `hsl(${(index / total) * 360}, 70%, 30%)`);
             gradient.addColorStop(1, `hsl(${(index / total) * 360 + 40}, 80%, 15%)`);
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-            ctx.lineWidth = 10;
-            ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
-
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.font = 'bold 80px sans-serif';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillStyle = gradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; ctx.lineWidth = 10; ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'; ctx.font = 'bold 80px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.fillText(`Awaiting Photo ${index + 1}`, canvas.width / 2, canvas.height / 2 - 20);
-            
-            ctx.font = '30px sans-serif';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.font = '30px sans-serif'; ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
             ctx.fillText('Click "Load Your Photos"', canvas.width / 2, canvas.height / 2 + 50);
-
             return new THREE.CanvasTexture(canvas);
         }
 
-        // Recalculates all positions dynamically based on the current items and spacing setting
         function updateCarouselLayout() {
-            // Divide by 2 because each photo consists of a frame + plane
             const count = Math.floor(carouselGroup.children.length / 2); 
             if (count === 0) return;
-
-            // Calculate base radius ensuring enough room, then apply user multiplier
             const baseRadius = Math.max(6, (count * 5.5) / (2 * Math.PI));
             const activeRadius = baseRadius * spacingMultiplier;
 
             for (let i = 0; i < count; i++) {
                 const angle = (i / count) * Math.PI * 2;
-                
-                // Get frame and plane objects
                 const frame = carouselGroup.children[i * 2];
                 const plane = carouselGroup.children[i * 2 + 1];
                 
-                const posX = Math.sin(angle) * activeRadius;
-                const posZ = Math.cos(angle) * activeRadius;
-                
-                // Position the front plane
-                plane.position.set(posX, 0, posZ);
+                plane.position.set(Math.sin(angle) * activeRadius, 0, Math.cos(angle) * activeRadius);
                 plane.rotation.y = angle;
-                
-                // Position the backing frame slightly behind it
                 frame.position.copy(plane.position);
                 frame.rotation.copy(plane.rotation);
                 frame.translateZ(-0.02); 
@@ -377,8 +212,7 @@
         function createPlaceholders(count) {
             clearCarousel();
             for (let i = 0; i < count; i++) {
-                const texture = createPlaceholderTexture(i, count);
-                addPanelToCarousel(texture, 4, 3);
+                addPanelToCarousel(createPlaceholderTexture(i, count), 4, 3);
             }
             updateCarouselLayout();
         }
@@ -394,105 +228,53 @@
         }
 
         function addPanelToCarousel(texture, width, height) {
-            const geometry = new THREE.PlaneGeometry(width, height);
-            const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
-            const plane = new THREE.Mesh(geometry, material);
-
-            const frameGeo = new THREE.PlaneGeometry(width + 0.2, height + 0.2);
-            const frameMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
-            const frame = new THREE.Mesh(frameGeo, frameMat);
-
-            // Add as a pair: frame first, then plane (so math works)
-            carouselGroup.add(frame);
-            carouselGroup.add(plane);
+            const plane = new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide }));
+            const frame = new THREE.Mesh(new THREE.PlaneGeometry(width + 0.2, height + 0.2), new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }));
+            carouselGroup.add(frame); carouselGroup.add(plane);
         }
 
         function createParticles() {
-            const particleCount = 800;
-            const geometry = new THREE.BufferGeometry();
+            const particleCount = 800; const geometry = new THREE.BufferGeometry();
             const positions = new Float32Array(particleCount * 3);
-            
-            for(let i = 0; i < particleCount * 3; i++) {
-                positions[i] = (Math.random() - 0.5) * 40;
-            }
-            
+            for(let i = 0; i < particleCount * 3; i++) positions[i] = (Math.random() - 0.5) * 40;
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            
-            const canvas = document.createElement('canvas');
-            canvas.width = 32; canvas.height = 32;
+            const canvas = document.createElement('canvas'); canvas.width = 32; canvas.height = 32;
             const ctx = canvas.getContext('2d');
             const grad = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
-            grad.addColorStop(0, 'rgba(255,255,255,1)');
-            grad.addColorStop(1, 'rgba(255,255,255,0)');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, 32, 32);
-            
-            const material = new THREE.PointsMaterial({
-                color: 0x38bdf8,
-                size: 0.15,
-                map: new THREE.CanvasTexture(canvas),
-                transparent: true,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false
-            });
-            
-            particles = new THREE.Points(geometry, material);
+            grad.addColorStop(0, 'rgba(255,255,255,1)'); grad.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = grad; ctx.fillRect(0, 0, 32, 32);
+            particles = new THREE.Points(geometry, new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.15, map: new THREE.CanvasTexture(canvas), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
             scene.add(particles);
         }
 
-        // Update Slider UI from JavaScript Logic
         function syncZoomUI() {
-            const slider = document.getElementById('zoomSlider');
-            const valDisplay = document.getElementById('zoomVal');
-            slider.value = targetCameraZ;
-            valDisplay.innerText = targetCameraZ.toFixed(1);
+            document.getElementById('zoomSlider').value = targetCameraZ;
+            document.getElementById('zoomVal').innerText = targetCameraZ.toFixed(1);
         }
 
         function setupSettingsControls() {
-            const speedSlider = document.getElementById('speedSlider');
-            const zoomSlider = document.getElementById('zoomSlider');
-            const spaceSlider = document.getElementById('spaceSlider');
-            
-            const speedVal = document.getElementById('speedVal');
-            const zoomVal = document.getElementById('zoomVal');
-            const spaceVal = document.getElementById('spaceVal');
-
-            speedSlider.addEventListener('input', (e) => {
+            document.getElementById('speedSlider').addEventListener('input', (e) => {
                 baseRotationSpeed = parseFloat(e.target.value);
-                const display = (baseRotationSpeed / 0.0015).toFixed(1);
-                speedVal.innerText = `${display}x`;
+                document.getElementById('speedVal').innerText = `${(baseRotationSpeed / 0.0015).toFixed(1)}x`;
             });
-
-            zoomSlider.addEventListener('input', (e) => {
+            document.getElementById('zoomSlider').addEventListener('input', (e) => {
                 targetCameraZ = parseFloat(e.target.value);
-                zoomVal.innerText = targetCameraZ.toFixed(1);
+                document.getElementById('zoomVal').innerText = targetCameraZ.toFixed(1);
             });
-
-            spaceSlider.addEventListener('input', (e) => {
+            document.getElementById('spaceSlider').addEventListener('input', (e) => {
                 spacingMultiplier = parseFloat(e.target.value);
-                spaceVal.innerText = `${spacingMultiplier.toFixed(1)}x`;
+                document.getElementById('spaceVal').innerText = `${spacingMultiplier.toFixed(1)}x`;
                 updateCarouselLayout(); 
             });
         }
 
         function setupInteractions() {
             const container = document.getElementById('canvas-container');
-
-            const getPinchDistance = (e) => Math.hypot(
-                e.touches[0].pageX - e.touches[1].pageX,
-                e.touches[0].pageY - e.touches[1].pageY
-            );
+            const getPinchDistance = (e) => Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
 
             const onPointerDown = (e) => {
-                // Ignore clicks on buttons/sliders
                 if (e.target.tagName.toLowerCase() === 'input' || e.target.closest('.ui-layer')) return;
-
-                if (e.touches && e.touches.length === 2) {
-                    isDragging = false;
-                    initialPinchDistance = getPinchDistance(e);
-                    return;
-                }
-                
+                if (e.touches && e.touches.length === 2) { isDragging = false; initialPinchDistance = getPinchDistance(e); return; }
                 isDragging = true;
                 previousX = e.touches ? e.touches[0].pageX : e.clientX;
                 previousY = e.touches ? e.touches[0].pageY : e.clientY;
@@ -501,91 +283,79 @@
 
             const onPointerMove = (e) => {
                 if (e.touches && e.touches.length === 2 && initialPinchDistance !== null) {
-                    const currentPinchDistance = getPinchDistance(e);
-                    const pinchDelta = initialPinchDistance - currentPinchDistance;
-                    
-                    targetCameraZ += pinchDelta * 0.05;
-                    targetCameraZ = Math.max(minCameraZ, Math.min(maxCameraZ, targetCameraZ));
-                    syncZoomUI();
-                    
-                    initialPinchDistance = currentPinchDistance;
-                    return;
+                    const pinchDelta = initialPinchDistance - getPinchDistance(e);
+                    targetCameraZ = Math.max(minCameraZ, Math.min(maxCameraZ, targetCameraZ + pinchDelta * 0.05));
+                    syncZoomUI(); initialPinchDistance = getPinchDistance(e); return;
                 }
-
                 if (!isDragging) return;
-                
                 const currentX = e.touches ? e.touches[0].pageX : e.clientX;
                 const currentY = e.touches ? e.touches[0].pageY : e.clientY;
-                
                 targetRotationY += (currentX - previousX) * 0.005;
-                targetRotationX += (currentY - previousY) * 0.002;
-                targetRotationX = Math.max(-0.3, Math.min(0.3, targetRotationX));
-
+                targetRotationX = Math.max(-0.3, Math.min(0.3, targetRotationX + (currentY - previousY) * 0.002));
                 previousX = currentX; previousY = currentY;
             };
 
             const onPointerUp = (e) => {
-                if (e && e.touches && e.touches.length < 2) {
-                    initialPinchDistance = null;
-                }
-                isDragging = false;
-                container.style.cursor = 'grab';
+                if (e && e.touches && e.touches.length < 2) initialPinchDistance = null;
+                isDragging = false; container.style.cursor = 'grab';
             };
 
-            container.addEventListener('mousedown', onPointerDown);
-            window.addEventListener('mousemove', onPointerMove);
-            window.addEventListener('mouseup', onPointerUp);
-            
-            container.addEventListener('wheel', (e) => {
-                targetCameraZ += e.deltaY * 0.02;
-                targetCameraZ = Math.max(minCameraZ, Math.min(maxCameraZ, targetCameraZ));
-                syncZoomUI();
-            }, { passive: true });
-            
-            container.addEventListener('touchstart', onPointerDown, { passive: true });
-            window.addEventListener('touchmove', onPointerMove, { passive: true });
-            window.addEventListener('touchend', onPointerUp);
+            container.addEventListener('mousedown', onPointerDown); window.addEventListener('mousemove', onPointerMove); window.addEventListener('mouseup', onPointerUp);
+            container.addEventListener('wheel', (e) => { targetCameraZ = Math.max(minCameraZ, Math.min(maxCameraZ, targetCameraZ + e.deltaY * 0.02)); syncZoomUI(); }, { passive: true });
+            container.addEventListener('touchstart', onPointerDown, { passive: true }); window.addEventListener('touchmove', onPointerMove, { passive: true }); window.addEventListener('touchend', onPointerUp);
             container.style.cursor = 'grab';
         }
 
         function setupFileUpload() {
             const input = document.getElementById('fileInput');
+            const btnText = document.getElementById('btn-text');
             
             input.addEventListener('change', (e) => {
                 const files = Array.from(e.target.files);
                 if (files.length === 0) return;
 
+                btnText.innerText = `Loading ${files.length} Photos...`;
                 clearCarousel();
-                
-                // Allow uploading the exact same files again if requested
-                input.value = ""; 
+                let loadedCount = 0;
 
                 files.forEach((file) => {
                     const reader = new FileReader();
                     reader.onload = (event) => {
                         const img = new Image();
                         img.onload = () => {
-                            const texture = new THREE.Texture(img);
-                            texture.needsUpdate = true;
+                            // Calculate 3D display aspect ratio
+                            const aspect = img.width / img.height;
+                            let displayHeight = 3.5, displayWidth = displayHeight * aspect;
+                            if (displayWidth > 6) { displayWidth = 6; displayHeight = displayWidth / aspect; }
+
+                            // FIX: Resize the image via Canvas to prevent iPad WebGL Memory Crashes
+                            const MAX_SIZE = 1024;
+                            let texWidth = img.width, texHeight = img.height;
+                            if (texWidth > MAX_SIZE || texHeight > MAX_SIZE) {
+                                const ratio = Math.min(MAX_SIZE / texWidth, MAX_SIZE / texHeight);
+                                texWidth *= ratio; texHeight *= ratio;
+                            }
+
+                            const canvas = document.createElement('canvas');
+                            canvas.width = texWidth; canvas.height = texHeight;
+                            canvas.getContext('2d').drawImage(img, 0, 0, texWidth, texHeight);
+
+                            const texture = new THREE.CanvasTexture(canvas);
                             texture.minFilter = THREE.LinearFilter; 
                             
-                            const aspect = img.width / img.height;
-                            let height = 3.5;
-                            let width = height * aspect;
-                            
-                            if (width > 6) { width = 6; height = width / aspect; }
-
-                            // Add the loaded image into the 3D space
-                            addPanelToCarousel(texture, width, height);
-                            
-                            // Re-calculate the layout radius immediately for every new photo
+                            addPanelToCarousel(texture, displayWidth, displayHeight);
                             updateCarouselLayout();
                             
-                            // Auto-adjust camera so we don't end up inside the expanding ring
                             const count = Math.floor(carouselGroup.children.length / 2);
                             const baseRadius = Math.max(6, (count * 5.5) / (2 * Math.PI));
                             targetCameraZ = Math.max(12, (baseRadius * spacingMultiplier) + 8);
                             syncZoomUI();
+
+                            loadedCount++;
+                            if(loadedCount === files.length) {
+                                btnText.innerText = "Load Your Photos";
+                                input.value = ""; // Safe to reset here after fully loading
+                            }
                         };
                         img.src = event.target.result;
                     };
@@ -594,35 +364,17 @@
             });
         }
 
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
+        function onWindowResize() { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); }
 
         function animate() {
             requestAnimationFrame(animate);
-
-            if (!isDragging && initialPinchDistance === null) {
-                targetRotationY += baseRotationSpeed;
-            }
-
+            if (!isDragging && initialPinchDistance === null) targetRotationY += baseRotationSpeed;
             currentRotationY += (targetRotationY - currentRotationY) * 0.1;
             currentRotationX += (targetRotationX - currentRotationX) * 0.1;
-
-            carouselGroup.rotation.y = currentRotationY;
-            carouselGroup.rotation.x = currentRotationX;
-
-            currentCameraZ += (targetCameraZ - currentCameraZ) * 0.1;
-            camera.position.z = currentCameraZ;
-
-            if (particles) {
-                particles.rotation.y += 0.0005;
-                particles.rotation.x += 0.0002;
-            }
-
+            carouselGroup.rotation.y = currentRotationY; carouselGroup.rotation.x = currentRotationX;
+            currentCameraZ += (targetCameraZ - currentCameraZ) * 0.1; camera.position.z = currentCameraZ;
+            if (particles) { particles.rotation.y += 0.0005; particles.rotation.x += 0.0002; }
             carouselGroup.position.y = Math.sin(Date.now() * 0.001) * 0.2;
-
             renderer.render(scene, camera);
         }
     </script>
